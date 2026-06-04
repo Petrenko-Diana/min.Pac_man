@@ -18,4 +18,3 @@ class HUD:
         )
 
         screen.blit(score_text, (10, 10))
-
