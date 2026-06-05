@@ -1,5 +1,9 @@
 import pygame
 
+from menu import Menu
+from game_over import GameOver
+from Game_win import GameWin
+
 from settings import *
 from level import Level
 from player import Player
@@ -15,85 +19,106 @@ pygame.display.set_caption("Pac-Man")
 
 clock = pygame.time.Clock()
 
-level = Level()
-player = Player(level)
+menu = Menu()
+game_over = GameOver()
+game_win = GameWin()
 
-berries = Berry()
-score = Score()
-hud = HUD()
 
-ghosts = [
-    Ghost(9, 9, "red", 25),
-    Ghost(8, 9, "orange", 40),
-    Ghost(9, 8, "cyan", 60),
-    Ghost(9, 10, "pink", 80)
-]
+def new_game():
+    level = Level()
+    player = Player(level)
 
-running = True
+    berries = Berry()
+    score = Score()
+    hud = HUD()
 
-while running:
+    ghosts = [
+        Ghost(9, 9, "red", 25),
+        Ghost(8, 9, "orange", 40),
+        Ghost(9, 8, "cyan", 60),
+        Ghost(9, 10, "pink", 80)
+    ]
 
-    clock.tick(FPS)
+    return level, player, berries, score, hud, ghosts
 
-    for event in pygame.event.get():
 
-        if event.type == pygame.QUIT:
-            running = False
+if not menu.run(screen):
+    pygame.quit()
+    quit()
 
-    player.move()
-    player.update_power_mode()
-    player.update_invincible()
-    player.update_freeze()
+game_running = True
 
-    points = player.eat_berry(berries)
-    if points:
-        score.add(points)
+while game_running:
 
-    points = player.eat_big_berry(berries)
-    if points:
-        score.add(points)
+    level, player, berries, score, hud, ghosts = new_game()
+    running = True
 
-    if not berries.berries and not berries.big_berries:
+    while running:
 
-        print("YOU WIN!")
-        running = False
+        clock.tick(FPS)
 
-    for ghost in ghosts:
-
-        ghost.move(player)
-
-        if player.power_mode and player.is_dead(ghost):
-
-            ghost.reset()
-            score.add(200)
-
-        elif not player.invincible and player.is_dead(ghost):
-
-            player.lives -= 1
-
-            if player.lives <= 0:
-
-                print("GAME OVER")
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 running = False
+                game_running = False
 
+        player.move()
+        player.update_power_mode()
+        player.update_invincible()
+        player.update_freeze()
+
+        points = player.eat_berry(berries)
+        if points:
+            score.add(points)
+
+        points = player.eat_big_berry(berries)
+        if points:
+            score.add(points)
+
+        if not berries.berries and not berries.big_berries:
+            if game_win.run(screen):
+                running = False
             else:
+                running = False
+                game_running = False
+            continue
 
-                player.reset()
-                player.freeze()
-            break
+        for ghost in ghosts:
 
-    screen.fill(BLACK)
+            ghost.move(player)
 
-    level.draw(screen)
-    berries.draw(screen)
+            if player.power_mode and player.is_dead(ghost):
+                ghost.reset()
+                score.add(200)
 
-    player.draw(screen)
+            elif not player.invincible and player.is_dead(ghost):
 
-    for ghost in ghosts:
-        ghost.draw(screen, player)
+                player.lives -= 1
 
-    hud.draw(screen, score, player)
+                if player.lives <= 0:
+                    if game_over.run(screen):
+                        running = False
+                    else:
+                        running = False
+                        game_running = False
+                else:
+                    player.reset()
+                    player.freeze()
 
-    pygame.display.flip()
+                break
+
+        screen.fill(BLACK)
+
+        level.draw(screen)
+        berries.draw(screen)
+
+        player.draw(screen)
+
+        for ghost in ghosts:
+            ghost.draw(screen, player)
+
+        hud.draw(screen, score, player)
+
+        pygame.display.flip()
 
 pygame.quit()
