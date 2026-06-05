@@ -16,8 +16,15 @@ class Ghost:
         self.start_x = col
         self.start_y = row
 
-        self.color = pygame.Color(color)
+        self.pixel_x = col * CHAR_SIZE
+        self.pixel_y = row * CHAR_SIZE
 
+        self.target_x = self.pixel_x
+        self.target_y = self.pixel_y
+
+        self.speed = 2
+
+        self.color = pygame.Color(color)
         self.radius = CHAR_SIZE // 2 - 2
 
         self.move_timer = 0
@@ -49,24 +56,15 @@ class Ghost:
             if (x, y) == target:
                 break
 
-            for dx, dy in [
-                (-1, 0),
-                (1, 0),
-                (0, -1),
-                (0, 1)
-            ]:
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
 
                 nx = x + dx
                 ny = y + dy
 
-                if (
-                    self.can_move(nx, ny)
-                    and (nx, ny) not in visited
-                ):
+                if self.can_move(nx, ny) and (nx, ny) not in visited:
 
                     visited.add((nx, ny))
                     parent[(nx, ny)] = (x, y)
-
                     queue.append((nx, ny))
 
         if start == target:
@@ -76,28 +74,20 @@ class Ghost:
             return []
 
         path = []
-
         current = target
 
         while current != start:
-
             path.append(current)
             current = parent[current]
 
         path.reverse()
-
         return path
 
     def random_move(self):
 
         moves = []
 
-        for dx, dy in [
-            (-1, 0),
-            (1, 0),
-            (0, -1),
-            (0, 1)
-        ]:
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
 
             nx = self.grid_x + dx
             ny = self.grid_y + dy
@@ -106,39 +96,54 @@ class Ghost:
                 moves.append((nx, ny))
 
         if moves:
-            self.grid_x, self.grid_y = random.choice(moves)
+            nx, ny = random.choice(moves)
+            self.set_target(nx, ny)
+
+    def set_target(self, gx, gy):
+
+        self.grid_x = gx
+        self.grid_y = gy
+
+        self.target_x = gx * CHAR_SIZE
+        self.target_y = gy * CHAR_SIZE
 
     def move(self, player):
 
         now = pygame.time.get_ticks()
 
         if now - self.move_timer < self.move_delay:
+            self.update_position()
             return
 
         self.move_timer = now
 
-        if random.random( ) < 0.4:
-
+        # випадковість
+        if random.random() < 0.4:
             self.random_move()
+        else:
+            path = self.bfs(player.grid_x, player.grid_y)
 
-            return
+            if path:
+                nx, ny = path[0]
+                self.set_target(nx, ny)
 
-        path = self.bfs(
-            player.grid_x,
-            player.grid_y
-        )
+        self.update_position()
 
-        if path:
+    def update_position(self):
 
-            next_x, next_y = path[0]
+        dx = self.target_x - self.pixel_x
+        dy = self.target_y - self.pixel_y
 
-            self.grid_x = next_x
-            self.grid_y = next_y
+        if dx != 0:
+            self.pixel_x += self.speed if dx > 0 else -self.speed
+
+        if dy != 0:
+            self.pixel_y += self.speed if dy > 0 else -self.speed
 
     def draw(self, screen):
 
-        x = self.grid_x * CHAR_SIZE + CHAR_SIZE // 2
-        y = self.grid_y * CHAR_SIZE + CHAR_SIZE // 2
+        x = self.pixel_x + CHAR_SIZE // 2
+        y = self.pixel_y + CHAR_SIZE // 2
 
         pygame.draw.circle(
             screen,
@@ -150,8 +155,8 @@ class Ghost:
     def get_rect(self):
 
         return pygame.Rect(
-            self.grid_x * CHAR_SIZE,
-            self.grid_y * CHAR_SIZE,
+            self.pixel_x,
+            self.pixel_y,
             CHAR_SIZE,
             CHAR_SIZE
         )
@@ -160,3 +165,8 @@ class Ghost:
 
         self.grid_x = self.start_x
         self.grid_y = self.start_y
+        self.pixel_x = self.grid_x * CHAR_SIZE
+        self.pixel_y = self.grid_y * CHAR_SIZE
+
+        self.target_x = self.pixel_x
+        self.target_y = self.pixel_y

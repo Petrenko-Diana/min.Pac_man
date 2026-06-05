@@ -10,7 +10,6 @@ class HUD:
 
     def draw(self, screen, score, player):
 
-        # SCORE
         score_text = self.font.render(
             f"Score: {score.value}",
             True,

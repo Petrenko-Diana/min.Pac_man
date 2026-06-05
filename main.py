@@ -10,13 +10,11 @@ from HUD import HUD
 
 pygame.init()
 
-# ---------------- SCREEN ----------------
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Pac-Man")
 
 clock = pygame.time.Clock()
 
-# ---------------- OBJECTS ----------------
 level = Level()
 player = Player(level)
 
@@ -31,20 +29,17 @@ ghosts = [
     Ghost(8, 5, "pink")
 ]
 
-# ---------------- GAME LOOP ----------------
 running = True
 
 while running:
 
     clock.tick(FPS)
 
-    # -------- EVENTS --------
     for event in pygame.event.get():
 
         if event.type == pygame.QUIT:
             running = False
 
-    # -------- UPDATE --------
     player.move()
     player.update_power_mode()
     player.update_invincible()
@@ -57,24 +52,20 @@ while running:
     if points:
         score.add(points)
 
-    # -------- WIN --------
     if not berries.berries and not berries.big_berries:
 
         print("YOU WIN!")
         running = False
 
-    # -------- GHOSTS --------
     for ghost in ghosts:
 
         ghost.move(player)
 
-        # З'їли привида
         if player.power_mode and player.is_dead(ghost):
 
             ghost.reset()
             score.add(200)
 
-        # Привид з'їв гравця
         elif not player.invincible and player.is_dead(ghost):
 
             player.lives -= 1
@@ -89,7 +80,6 @@ while running:
                 player.reset()
             break
 
-    # -------- DRAW --------
     screen.fill(BLACK)
 
     level.draw(screen)

@@ -18,7 +18,6 @@ class Level:
                 x = col * CHAR_SIZE
                 y = row * CHAR_SIZE
 
-                # стіни
                 if cell == '1':
                     pygame.draw.rect(
                         screen,

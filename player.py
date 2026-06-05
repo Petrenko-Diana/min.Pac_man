@@ -1,5 +1,4 @@
 import pygame
-
 from settings import *
 from map_data import MAP
 
@@ -8,79 +7,78 @@ class Player:
 
     def __init__(self, level):
 
-        self.invincible = False
-        self.invincible_until = 0
-
         self.level = level
         self.lives = 3
 
-        self.move_timer = 0
-        self.move_delay = PLAYER_DELAY
+        self.invincible = False
+        self.invincible_until = 0
 
         self.power_mode = False
         self.power_end_time = 0
 
-        self.radius = CHAR_SIZE // 2 - 2
+        self.move_timer = 0
+        self.move_delay = PLAYER_DELAY
 
         self.grid_x = 1
         self.grid_y = 1
 
         for row in range(len(MAP)):
             for col in range(len(MAP[row])):
-
                 if MAP[row][col] == 'P':
-
                     self.grid_x = col
                     self.grid_y = row
-
                     self.start_x = col
                     self.start_y = row
-                    return
+                    break
+
+        self.pixel_x = self.grid_x * CHAR_SIZE
+        self.pixel_y = self.grid_y * CHAR_SIZE
+
+        self.target_x = self.pixel_x
+        self.target_y = self.pixel_y
+
+        self.speed = 2
+        self.radius = CHAR_SIZE // 2 - 2
 
     def move(self):
 
         now = pygame.time.get_ticks()
 
-        if now - self.move_timer < self.move_delay:
-            return
-
-        self.move_timer = now
-
         keys = pygame.key.get_pressed()
 
-        new_x = self.grid_x
-        new_y = self.grid_y
+        if now - self.move_timer >= self.move_delay:
 
-        if keys[pygame.K_LEFT]:
-            new_x -= 1
+            new_x = self.grid_x
+            new_y = self.grid_y
 
-        elif keys[pygame.K_RIGHT]:
-            new_x += 1
+            if keys[pygame.K_LEFT]:
+                new_x -= 1
+            elif keys[pygame.K_RIGHT]:
+                new_x += 1
+            elif keys[pygame.K_UP]:
+                new_y -= 1
+            elif keys[pygame.K_DOWN]:
+                new_y += 1
 
-        elif keys[pygame.K_UP]:
-            new_y -= 1
+            if self.can_move(new_x, new_y):
+                self.grid_x = new_x
+                self.grid_y = new_y
 
-        elif keys[pygame.K_DOWN]:
-            new_y += 1
+                self.target_x = new_x * CHAR_SIZE
+                self.target_y = new_y * CHAR_SIZE
 
-        if self.can_move(new_x, new_y):
-            self.grid_x = new_x
-            self.grid_y = new_y
+            self.move_timer = now
+
+        self.update_smooth()
 
     def update_power_mode(self):
 
-        if (
-            self.power_mode and
-            pygame.time.get_ticks() >= self.power_end_time
-        ):
+        if self.power_mode and pygame.time.get_ticks() >= self.power_end_time:
             self.power_mode = False
 
     def update_invincible(self):
 
-        if (
-                self.invincible and
-                pygame.time.get_ticks() >= self.invincible_until
-        ):
+        if self.invincible and pygame.time.get_ticks() >= self.invincible_until:
             self.invincible = False
 
     def can_move(self, gx, gy):
@@ -93,15 +91,23 @@ class Player:
 
         return MAP[gy][gx] != '1'
 
+    def update_smooth(self):
+
+        dx = self.target_x - self.pixel_x
+        dy = self.target_y - self.pixel_y
+
+        if dx != 0:
+            self.pixel_x += 4 if dx > 0 else -4
+
+        if dy != 0:
+            self.pixel_y += 4 if dy > 0 else -4
+
     def draw(self, screen):
 
-        x = self.grid_x * CHAR_SIZE + CHAR_SIZE // 2
-        y = self.grid_y * CHAR_SIZE + CHAR_SIZE // 2
+        x = self.pixel_x + CHAR_SIZE // 2
+        y = self.pixel_y + CHAR_SIZE // 2
 
-        color = YELLOW
-
-        if self.invincible:
-            color = WHITE
+        color = WHITE if self.invincible else YELLOW
 
         pygame.draw.circle(
             screen,
@@ -113,8 +119,8 @@ class Player:
     def get_rect(self):
 
         return pygame.Rect(
-            self.grid_x * CHAR_SIZE,
-            self.grid_y * CHAR_SIZE,
+            self.pixel_x,
+            self.pixel_y,
             CHAR_SIZE,
             CHAR_SIZE
         )
@@ -134,7 +140,6 @@ class Player:
         pos = (self.grid_x, self.grid_y)
 
         if pos in berries.big_berries:
-
             berries.big_berries.remove(pos)
 
             self.power_mode = True
@@ -149,12 +154,11 @@ class Player:
         self.grid_x = self.start_x
         self.grid_y = self.start_y
 
+        self.pixel_x = self.grid_x * CHAR_SIZE
+        self.pixel_y = self.grid_y * CHAR_SIZE
+
         self.invincible = True
         self.invincible_until = pygame.time.get_ticks() + 2000
 
     def is_dead(self, ghost):
-
-        return (
-            self.grid_x == ghost.grid_x and
-            self.grid_y == ghost.grid_y
-        )
+        return (self.get_rect().colliderect(ghost.get_rect()))
