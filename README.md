@@ -24,7 +24,7 @@ The game includes player movement, ghosts AI, collectibles, scoring system, and 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/pacman.git
+git clone https://github.com/Petrenko-Diana/pacman.git
 cd pacman
 pip install pygame
 ```
