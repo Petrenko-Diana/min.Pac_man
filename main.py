@@ -23,10 +23,10 @@ score = Score()
 hud = HUD()
 
 ghosts = [
-    Ghost(5, 5, "red"),
-    Ghost(7, 9, "orange"),
-    Ghost(4, 2, "cyan"),
-    Ghost(8, 5, "pink")
+    Ghost(9, 9, "red", 25),
+    Ghost(8, 9, "orange", 40),
+    Ghost(9, 8, "cyan", 60),
+    Ghost(9, 10, "pink", 80)
 ]
 
 running = True
@@ -43,6 +43,7 @@ while running:
     player.move()
     player.update_power_mode()
     player.update_invincible()
+    player.update_freeze()
 
     points = player.eat_berry(berries)
     if points:
@@ -78,6 +79,7 @@ while running:
             else:
 
                 player.reset()
+                player.freeze()
             break
 
     screen.fill(BLACK)
@@ -88,7 +90,7 @@ while running:
     player.draw(screen)
 
     for ghost in ghosts:
-        ghost.draw(screen)
+        ghost.draw(screen, player)
 
     hud.draw(screen, score, player)
 

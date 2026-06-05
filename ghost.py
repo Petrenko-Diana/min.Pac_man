@@ -2,13 +2,14 @@ import random
 import pygame
 from collections import deque
 
+import player
 from settings import *
 from map_data import MAP
 
 
 class Ghost:
 
-    def __init__(self, row, col, color):
+    def __init__(self, row, col, color, random_chance):
 
         self.grid_x = col
         self.grid_y = row
@@ -29,6 +30,22 @@ class Ghost:
 
         self.move_timer = 0
         self.move_delay = GHOST_DELAY
+
+        self.random_chance = random_chance
+        self.image = pygame.image.load(
+            f"sprites/{color}_ghost.jpg"
+        ).convert_alpha()
+        self.image = pygame.transform.scale(
+            self.image,
+            (CHAR_SIZE,CHAR_SIZE)
+        )
+        self.scared = pygame.image.load(
+            f"sprites/white_ghost.jpg"
+        ).convert_alpha()
+        self.scared = pygame.transform.scale(
+            self.scared,
+            (CHAR_SIZE, CHAR_SIZE)
+        )
 
     def can_move(self, gx, gy):
 
@@ -117,15 +134,23 @@ class Ghost:
 
         self.move_timer = now
 
-        # випадковість
-        if random.random() < 0.4:
-            self.random_move()
+        if player.frozen:
+            self.return_home()
+        elif player.power_mode:
+            self.return_home()
+            self.move_delay = 500
+            self.speed = 1
         else:
-            path = self.bfs(player.grid_x, player.grid_y)
+            self.move_delay = GHOST_DELAY
+            self. speed = 2
+            if random.randint(0, 100) < self.random_chance:
+                self.random_move()
+            else:
+                path = self.bfs(player.grid_x, player.grid_y)
 
-            if path:
-                nx, ny = path[0]
-                self.set_target(nx, ny)
+                if path:
+                    nx, ny = path[0]
+                    self.set_target(nx, ny)
 
         self.update_position()
 
@@ -140,16 +165,16 @@ class Ghost:
         if dy != 0:
             self.pixel_y += self.speed if dy > 0 else -self.speed
 
-    def draw(self, screen):
+    def draw(self, screen, player):
 
-        x = self.pixel_x + CHAR_SIZE // 2
-        y = self.pixel_y + CHAR_SIZE // 2
+        image = self.image
 
-        pygame.draw.circle(
-            screen,
-            self.color,
-            (x, y),
-            self.radius
+        if player.power_mode:
+            image = self.scared
+
+        screen.blit(
+            image,
+            (self.pixel_x, self.pixel_y)
         )
 
     def get_rect(self):
@@ -160,6 +185,17 @@ class Ghost:
             CHAR_SIZE,
             CHAR_SIZE
         )
+
+    def return_home(self):
+
+        path =  self.bfs(
+            self.start_x,
+            self.start_y
+        )
+
+        if path:
+            nx, ny = path[0]
+            self.set_target(nx, ny)
 
     def reset(self):
 

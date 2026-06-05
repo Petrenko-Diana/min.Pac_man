@@ -34,6 +34,9 @@ class Player:
         self.pixel_x = self.grid_x * CHAR_SIZE
         self.pixel_y = self.grid_y * CHAR_SIZE
 
+        self.frozen = False
+        self.froze_until = 0
+
         self.target_x = self.pixel_x
         self.target_y = self.pixel_y
 
@@ -41,6 +44,9 @@ class Player:
         self.radius = CHAR_SIZE // 2 - 2
 
     def move(self):
+
+        if self.frozen:
+            return
 
         now = pygame.time.get_ticks()
 
@@ -143,11 +149,21 @@ class Player:
             berries.big_berries.remove(pos)
 
             self.power_mode = True
-            self.power_end_time = pygame.time.get_ticks() + 8000
+            self.power_end_time = pygame.time.get_ticks() + 5000
 
             return 50
 
         return 0
+
+    def freeze(self, ms=750):
+
+        self.frozen = True
+        self.froze_until = pygame.time.get_ticks() + ms
+
+    def update_freeze(self):
+
+        if self.frozen and pygame.time.get_ticks() >= self.froze_until:
+            self.frozen = False
 
     def reset(self):
 
